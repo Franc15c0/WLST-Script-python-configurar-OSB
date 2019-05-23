@@ -1,0 +1,46 @@
+import sys
+from java.io import FileInputStream
+from com.bea.wli.config.customization import Customization
+from com.bea.wli.sb.management.importexport import ALSBImportOperation
+from com.bea.wli.sb.management.configuration import ALSBConfigurationMBean
+from com.bea.wli.sb.management.configuration import SessionManagementMBean
+
+
+
+def customizeOSBService(customizationFile,url,user,pwd):
+        #url = argv
+        print url
+        print pwd
+        print user
+        print customizationFile
+      
+
+	SessionMBean = None
+	try:
+		connect(user,pwd,url)
+		domainRuntime()
+		sessionName = String("Customization"+Long(System.currentTimeMillis()).toString())
+		SessionMBean = findService("SessionManagement", "com.bea.wli.sb.management.configuration.SessionManagementMBean")
+		SessionMBean.createSession(sessionName)
+		OSBConfigurationMBean = findService(String("ALSBConfiguration.").concat(sessionName), "com.bea.wli.sb.management.configuration.ALSBConfigurationMBean")
+		print 'Loading customization File', customizationFile
+		iStream = FileInputStream(customizationFile)
+		customizationList = Customization.fromXML(iStream)		
+		OSBConfigurationMBean.customize(customizationList)
+		SessionMBean.activateSession(sessionName, "Complete customization using wlst")
+		disconnect()
+
+	except:
+		print "Unexpected error:", sys.exc_info()[0]
+		if SessionMBean != None:
+			SessionMBean.discardSession(sessionName)
+		raise
+
+def main():
+
+        
+        customizeOSBService(sys.argv[4],sys.argv[1],sys.argv[2],sys.argv[3])  
+          
+        print 'Successfully Completed customization'    
+main()
+	 
